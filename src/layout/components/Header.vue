@@ -9,7 +9,7 @@
             <div class="logo-icon-visible">
               <el-icon size="24"><sunrise /></el-icon>
             </div>
-            <div class="logo-pic">
+            <div class="logo-pic" @click="goHome">
               <div :class="{ 'logo-isvisible': isCollapse }">
                 <img src="@/assets/img/logo.png" alt="">
               </div>
@@ -58,9 +58,9 @@ import eventBus from '@/store/event';
 export default defineComponent({
 	name: "Header",
   setup(props, context) {
-      // 时间
-      let nowTime = ref('')
-      const getNowTime = () => {
+    // 时间
+    let nowTime = ref('')
+    const getNowTime = () => {
       let newDate = new Date()
       let weekday = new Array(7)
       weekday[0] = '星期日'
@@ -97,7 +97,8 @@ export default defineComponent({
     }
 
     const goInfo = () => {
-      router.replace('/user')
+      const tab = { menu: '个人中心', path: 'info' }
+      eventBus.emit('openPersonalCenter', tab);
     }
     const username = ref('');
     // 个人中心
@@ -111,13 +112,14 @@ export default defineComponent({
         username.value = route.params.username as string
       }
       console.log(username.value);
-
     }
-    const instance = getCurrentInstance();
     const isCollapse = ref<boolean>(false)
     const menuFlod = () => {
       isCollapse.value = !isCollapse.value;
       eventBus.emit('passCollapse', isCollapse.value)
+    }
+    const goHome = () => {
+      eventBus.emit('openHome', { menu: '首页', path: 'home'})
     }
     onMounted(() => {
       getNowTime()
@@ -134,7 +136,8 @@ export default defineComponent({
       goLogin,
       bgColor,
       bgColorArr,
-      nowTime
+      nowTime,
+      goHome
     }
   },
 })

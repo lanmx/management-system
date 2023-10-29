@@ -86,12 +86,14 @@ export default ({
               setLocalStorage('userInfo', {
                 username: res.data
               })
-              axios.defaults.headers.common['Authorization'] = `Bearer ${res.token}`;
+              axios.defaults.headers.common['Authorization'] = `${res.token}`;
               router.push({ name: 'Home', params: { username: res.data }})
+              if (getLocalStorage('currentTab')) {
+                router.push({ path: getLocalStorage('currentTab').path })
+              }
             } else {
               ElMessage.error('登录失败！请检查网络。' + res.message)
             }
-             
           })
         } else {
           return false

@@ -33,9 +33,10 @@
     "src/**/*.tsx",
     "src/**/*.vue",
     "tests/**/*.ts",
-    "tests/**/*.tsx"
-, "src/utils/format.ts"  ],
+    "tests/**/*.tsx",
+    "src/utils/format.ts"
+, "src/utils/utils.ts"  ],
   "exclude": [
     "node_modules"
-  ]
+  ],
 }

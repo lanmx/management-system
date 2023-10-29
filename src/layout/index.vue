@@ -9,9 +9,11 @@
           <Menu></Menu>
         </el-aside>
         <el-container class="h100">
+          <Tab></Tab>
           <el-main>
-            <Tab></Tab>
-            <router-view></router-view>
+            <div class="inner-page">
+              <router-view></router-view>
+            </div>
           </el-main>
           <el-footer>
             <Footer></Footer>
@@ -22,7 +24,7 @@
   </div>
 </template>
 <script lang="ts">
-import { defineComponent } from 'vue'
+import { defineComponent, onMounted } from 'vue'
 import Header from './components/Header.vue'
 import Menu from './components/Menu.vue'
 import Tab from './components/Tab.vue'
@@ -36,7 +38,6 @@ export default defineComponent({
     Footer
   },
   setup() {
-    
   },
 })
 </script>
@@ -46,5 +47,12 @@ export default defineComponent({
 }
 .h100 {
   height: 100%;
+}
+.el-main {
+  background-color: #f0f2f4;
+  padding-top: 12px;
+}
+.inner-page {
+  background-color: #fff;
 }
 </style>

@@ -1,12 +1,12 @@
 import { post } from './http';
-import { signUp, login } from '../interface/user.type'
+import { ts_signUp, ts_login } from '../interface/user.type'
 // 注册
-export function signup(params: signUp) {
+export function signup(params: ts_signUp) {
   return post('/users/signup', params);
 }
 
 // 登录
-export function login(params: login) {
+export function login(params: ts_login) {
   return post('/users/login', params)
 }
 

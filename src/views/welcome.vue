@@ -37,8 +37,8 @@ export default({
       router.push({ name: "Home" })
     }
     onMounted(() => {
-      const userInfo = getLocalStorage('userInfo')
-      if(userInfo && userInfo.username) {
+      const token = getLocalStorage('token')
+      if(token) {
         goHome();
       } else {
         goLogin();

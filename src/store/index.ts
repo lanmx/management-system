@@ -56,7 +56,7 @@ const store = createStore({
             username: data
           })
           commit("setUserInfo", { username: data });
-          axios.defaults.headers.common['Authorization'] = `Bearer ${res.token}`;
+          axios.defaults.headers.common['Authorization'] = `${res.token}`;
         } else {
           ElMessage.error('登录失败！' + res.message)
         }

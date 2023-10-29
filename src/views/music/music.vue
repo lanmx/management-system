@@ -11,11 +11,11 @@
         />
       </div>
       <el-button @click="handleAdd()">
-        <el-icon><Plus /></el-icon>新增菜单
+        <el-icon><Plus /></el-icon>新增音乐
       </el-button>
     </div>
 
-    <el-table :data="menuList" style="width: 100%" empty-text="无数据">
+    <el-table :data="list" style="width: 100%" height="999px" empty-text="无数据">
       <el-table-column
         v-for="item in tableHead"
         :key="item.key"
@@ -48,7 +48,7 @@
   <!-- 编辑弹框 -->
   <el-dialog
     v-model="visible"
-    :title="isAdd ? '新增菜单' : '编辑菜单'"
+    :title="isAdd ? '新增' : '编辑'"
     width="600px"
     :before-close="handleClose"
   >
@@ -84,18 +84,15 @@
 <script lang="ts">
 import { ref, reactive } from "vue";
 import {
-  editMenu,
-  addMenu,
-  getMenus,
-  deleteMenu,
-  searchMenu,
-} from "@/api/menu";
-import moment from "moment";
+  editMusic,
+  addMusic,
+  getMusic,
+  deleteMusic,
+  searchMusic,
+} from "@/api/music";
 import { Search, Plus } from "@element-plus/icons-vue";
-
 import type { ElForm } from "element-plus";
 import { ElMessage } from "element-plus";
-// import type { FormRules, FormInstance } from 'element-plus'
 
 export default {
   components: {
@@ -107,44 +104,45 @@ export default {
     type FormRules = InstanceType<typeof ElForm>;
     const ruleFormRef = ref<FormInstance>();
 
-    // 用户列表
-    const menuList = ref([]);
-    const getMenusList = async () => {
-      const res = await getMenus();
+    const list = ref([]);
+    const getList = async () => {
+      const res = await getMusic();
       const { status, data } = res;
       if (status === 0 && data) {
-        menuList.value = data;
+        list.value = data;
       }
     };
-    getMenusList();
+    getList();
 
     // 用户编辑和删除
     const visible = ref(false);
     // 编辑表单
     const form = reactive({
       id: null,
-      menu: "",
-      path: "",
-      parent: "",
-      icon: "",
+      songname: "",
+      songlink: "",
+      author: "",
+      lyric: "",
+      cover: "",
     });
     const handleOpen = (e: any, row: any) => {
       isAdd.value = false;
       console.log(e, row);
       form.id = row.id;
-      form.menu = row.menu;
-      form.path = row.path;
-      form.parent = row.parent;
-      form.icon = row.icon;
+      form.songname = row.songname;
+      form.songlink = row.songlink;
+      form.author = row.author;
+      form.lyric = row.lyric;
+      form.cover = row.cover;
       visible.value = true;
     };
     const handleDelete = async (e: any, row: any) => {
       console.log(e, row);
-      const res = await deleteMenu({ id: row.id });
+      const res = await deleteMusic({ id: row.id });
       const { status } = res;
       if (status === 0) {
         ElMessage.success("删除成功！");
-        getMenusList();
+        getList();
       } else {
         ElMessage.success("删除失败！");
       }
@@ -178,35 +176,37 @@ export default {
 
     // 添加菜单
     const addMenuFn = async () => {
-      const res = await addMenu({
-        menu: form.menu,
-        path: form.path,
-        parent: form.parent,
-        icon: form.icon,
+      const res = await addMusic({
+        songname: form.songname,
+        songlink: form.songlink,
+        author: form.author,
+        lyric: form.lyric,
+        cover: form.cover,
       });
       const { status, message } = res;
       if (status === 0) {
         ElMessage.success("添加成功！");
         visible.value = false;
-        getMenusList();
+        getList();
       } else {
         ElMessage.error("添加失败！" + message);
       }
     };
     // 编辑菜单
     const editMenuFn = async () => {
-      const res = await editMenu({
+      const res = await editMusic({
         id: form.id,
-        menu: form.menu,
-        path: form.path,
-        parent: form.parent,
-        icon: form.icon,
+        songname: form.songname,
+        songlink: form.songlink,
+        author: form.author,
+        lyric: form.lyric,
+        cover: form.cover,
       });
       const { status, message } = res;
       if (status === 0) {
         ElMessage.success("修改成功！");
         visible.value = false;
-        getMenusList();
+        getList();
       } else {
         ElMessage.error("修改失败！" + message);
       }
@@ -214,16 +214,11 @@ export default {
     // 搜索
     const searchValue = ref("");
     const searchChange = async (e: any) => {
-      const res = await searchMenu({ menu: e });
+      const res = await searchMusic({ search: e });
       const { data, status } = res;
       if (status === 0) {
         const result = data || [];
-        result.forEach((item: any) => {
-          item.create_date = moment(item.create_date).format(
-            "YYYY-MM-DD HH:mm:ss"
-          );
-        });
-        menuList.value = result;
+        list.value = result;
       }
     };
 
@@ -232,14 +227,16 @@ export default {
     const handleAdd = () => {
       isAdd.value = true;
       form.id = null;
-      form.menu = "";
-      form.path = "";
-      form.parent = "";
+      form.songname = "";
+      form.songlink = "";
+      form.author = "";
+      form.lyric = "";
+      form.cover = "";
       visible.value = true;
     };
     return {
-      menuList,
-      getMenusList,
+      list,
+      getList,
       handleDelete,
       handleOpen,
       visible,
@@ -258,16 +255,18 @@ export default {
   data() {
     return {
       tableHead: [
-        { name: "菜单名称", key: "menu" },
-        { name: "菜单路径", key: "path" },
-        { name: "所属父级", key: "parent" },
-        { name: "菜单图标", key: "icon" },
+        { name: "歌名", key: "songname" },
+        { name: "作者", key: "author" },
+        { name: "链接", key: "songlink" },
+        { name: "封面", key: "cover" },
+        { name: "歌词", key: "lyric" },
       ],
       editFields: [
-        { name: "菜单名称", key: "menu" },
-        { name: "菜单路径", key: "path" },
-        { name: "所属父级", key: "parent" },
-        { name: "菜单图标", key: "icon" },
+        { name: "歌名", key: "songname" },
+        { name: "作者", key: "author" },
+        { name: "链接", key: "songlink" },
+        { name: "封面", key: "cover" },
+        { name: "歌词", key: "lyric" },
       ],
     };
   },

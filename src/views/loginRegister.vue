@@ -70,8 +70,8 @@ export default({
       signUpMode.value = false
     }
     onMounted(() => {
-      const userInfo = getLocalStorage('userInfo');
-      if (userInfo && userInfo.username) {
+      const token = getLocalStorage('token');
+      if (token) {
         router.push({ name: 'Home'});
       }
     })

@@ -11,28 +11,34 @@
         />
       </div>
       <el-button @click="handleAdd()">
-        <el-icon><Plus /></el-icon>新增菜单
+        <el-icon><Plus /></el-icon>新增文章
       </el-button>
     </div>
-
-    <el-table :data="menuList" style="width: 100%" empty-text="无数据">
+    <el-table
+      :data="blogList"
+      style="width: 100%"
+      height="999px"
+      empty-text="无数据"
+      :default-sort="{ prop: 'publish_time', order: 'descending' }"
+    >
       <el-table-column
         v-for="item in tableHead"
         :key="item.key"
         :prop="item.key"
         :label="item.name"
+        :sortable="item.sortable"
       >
       </el-table-column>
       <el-table-column label="操作">
         <template #default="scope">
-          <div class="icon blue" @click="handleOpen(scope.$index, scope.row)">
+          <div class="icon blue" @click="handleEdit(scope.$index, scope.row)">
             <span>编辑</span>
           </div>
           <el-popconfirm
             confirm-button-text="删除"
             cancel-button-text="取消"
             @confirm="handleDelete(scope.$index, scope.row)"
-            title="您确定要删除该菜单吗?"
+            title="您确定要删除该文章吗?"
           >
             <template #reference>
               <div class="icon red">
@@ -45,10 +51,10 @@
     </el-table>
   </div>
 
-  <!-- 编辑弹框 -->
+  <!-- 弹框 -->
   <el-dialog
     v-model="visible"
-    :title="isAdd ? '新增菜单' : '编辑菜单'"
+    :title="isAdd ? '新增文章' : '编辑文章'"
     width="600px"
     :before-close="handleClose"
   >
@@ -65,7 +71,18 @@
           :label="item.name"
           :prop="item.key"
         >
-          <el-input v-model="form[item.key]" />
+          <el-input
+            v-if="item.type !== 'date'"
+            v-model="form[item.key]"
+            :type="item.type"
+          />
+          <el-date-picker
+            v-if="item.type === 'date'"
+            v-model="form[item.key]"
+            type="date"
+            placeholder="请选择日期"
+            size="small"
+          />
         </el-form-item>
       </el-form>
     </div>
@@ -75,7 +92,7 @@
         <el-button type="primary" @click="submitForm(ruleFormRef)">
           确定
         </el-button>
-        <el-button @click="resetForm(ruleFormRef)">重置</el-button>
+        <el-button @click="resetForm(ruleFormRef)">Reset</el-button>
       </span>
     </template>
   </el-dialog>
@@ -84,67 +101,82 @@
 <script lang="ts">
 import { ref, reactive } from "vue";
 import {
-  editMenu,
-  addMenu,
-  getMenus,
-  deleteMenu,
-  searchMenu,
-} from "@/api/menu";
+  getBlogs,
+  addBlog,
+  editBlog,
+  deleteBlog,
+  searchBlog,
+} from "@/api/blog";
 import moment from "moment";
-import { Search, Plus } from "@element-plus/icons-vue";
+import { Search } from "@element-plus/icons-vue";
 
 import type { ElForm } from "element-plus";
 import { ElMessage } from "element-plus";
-// import type { FormRules, FormInstance } from 'element-plus'
 
 export default {
   components: {
     Search,
-    Plus,
   },
   setup() {
     type FormInstance = InstanceType<typeof ElForm>;
     type FormRules = InstanceType<typeof ElForm>;
     const ruleFormRef = ref<FormInstance>();
 
-    // 用户列表
-    const menuList = ref([]);
-    const getMenusList = async () => {
-      const res = await getMenus();
+    const blogList = ref([]);
+    const getBlogList = async () => {
+      const res = await getBlogs();
       const { status, data } = res;
-      if (status === 0 && data) {
-        menuList.value = data;
+      if (status === 0) {
+        data.forEach((item: any) => {
+          item.publish_time = moment(item.publish_time).format(
+            "YYYY-MM-DD HH:mm:ss"
+          );
+          item.update_time = moment(item.update_time).format(
+            "YYYY-MM-DD HH:mm:ss"
+          );
+        });
+        blogList.value = data || [];
       }
     };
-    getMenusList();
+    getBlogList();
 
-    // 用户编辑和删除
+    // 文章编辑和删除
     const visible = ref(false);
     // 编辑表单
     const form = reactive({
       id: null,
-      menu: "",
-      path: "",
+      text: "",
+      link: "",
       parent: "",
-      icon: "",
+      label: "",
+      description: "",
+      cate: "",
+      read_count: null,
+      good: null,
+      publish_time: "",
+      update_time: "",
     });
-    const handleOpen = (e: any, row: any) => {
-      isAdd.value = false;
+    const handleEdit = (e: any, row: any) => {
       console.log(e, row);
       form.id = row.id;
-      form.menu = row.menu;
-      form.path = row.path;
+      form.text = row.text;
+      form.link = row.link;
       form.parent = row.parent;
-      form.icon = row.icon;
+      form.label = row.label;
+      form.description = row.description;
+      form.cate = row.cate;
+      form.read_count = row.read_count;
+      form.good = row.good;
+      form.publish_time = row.publish_time;
+      form.update_time = row.update_time;
       visible.value = true;
     };
     const handleDelete = async (e: any, row: any) => {
-      console.log(e, row);
-      const res = await deleteMenu({ id: row.id });
+      const res = await deleteBlog({ id: row.id });
       const { status } = res;
       if (status === 0) {
         ElMessage.success("删除成功！");
-        getMenusList();
+        getBlogList();
       } else {
         ElMessage.success("删除失败！");
       }
@@ -152,9 +184,14 @@ export default {
     const handleClose = () => {
       visible.value = false;
     };
+
     const rules = reactive<FormRules>({
-      menu: [{ required: true, message: "请输入菜单名称", trigger: "blur" }],
+      text: [{ required: true, message: "请输入标题", trigger: "blur" }],
+      link: [{ required: true, message: "请输入路径", trigger: "blur" }],
+      parent: [{ required: true, message: "请输入所属父级", trigger: "blur" }],
+      cate: [{ required: true, message: "请输入分类", trigger: "blur" }],
     });
+
     const resetForm = (formEl: FormInstance | undefined) => {
       if (!formEl) return;
       formEl.resetFields();
@@ -165,6 +202,7 @@ export default {
       await formEl.validate(async (valid: boolean, fields: any) => {
         console.log(valid, fields);
         if (valid) {
+          console.log("submit!", fields);
           if (isAdd.value) {
             addMenuFn();
           } else {
@@ -176,37 +214,49 @@ export default {
       });
     };
 
-    // 添加菜单
+    // 添加
     const addMenuFn = async () => {
-      const res = await addMenu({
-        menu: form.menu,
-        path: form.path,
+      const res = await addBlog({
+        text: form.text,
+        link: form.link,
         parent: form.parent,
-        icon: form.icon,
+        label: form.label,
+        description: form.description,
+        cate: form.cate,
+        read_count: form.read_count,
+        good: form.good,
+        publish_time: form.publish_time,
+        update_time: form.update_time,
       });
       const { status, message } = res;
       if (status === 0) {
         ElMessage.success("添加成功！");
         visible.value = false;
-        getMenusList();
+        getBlogList();
       } else {
         ElMessage.error("添加失败！" + message);
       }
     };
-    // 编辑菜单
+    // 编辑
     const editMenuFn = async () => {
-      const res = await editMenu({
+      const res = await editBlog({
         id: form.id,
-        menu: form.menu,
-        path: form.path,
+        text: form.text,
+        link: form.link,
         parent: form.parent,
-        icon: form.icon,
+        label: form.label,
+        description: form.description,
+        cate: form.cate,
+        read_count: form.read_count,
+        good: form.good,
+        publish_time: form.publish_time,
+        update_time: form.update_time,
       });
       const { status, message } = res;
       if (status === 0) {
         ElMessage.success("修改成功！");
         visible.value = false;
-        getMenusList();
+        getBlogList();
       } else {
         ElMessage.error("修改失败！" + message);
       }
@@ -214,16 +264,11 @@ export default {
     // 搜索
     const searchValue = ref("");
     const searchChange = async (e: any) => {
-      const res = await searchMenu({ menu: e });
+      const res = await searchBlog({ search: e });
       const { data, status } = res;
       if (status === 0) {
         const result = data || [];
-        result.forEach((item: any) => {
-          item.create_date = moment(item.create_date).format(
-            "YYYY-MM-DD HH:mm:ss"
-          );
-        });
-        menuList.value = result;
+        blogList.value = result;
       }
     };
 
@@ -232,16 +277,23 @@ export default {
     const handleAdd = () => {
       isAdd.value = true;
       form.id = null;
-      form.menu = "";
-      form.path = "";
+      form.text = "";
+      form.link = "";
       form.parent = "";
+      form.label = "";
+      form.description = "";
+      form.cate = "";
+      form.read_count = null;
+      form.good = null;
+      form.publish_time = "";
+      form.update_time = "";
       visible.value = true;
     };
     return {
-      menuList,
-      getMenusList,
+      blogList,
+      getBlogList,
       handleDelete,
-      handleOpen,
+      handleEdit,
       visible,
       handleClose,
       submitForm,
@@ -251,23 +303,35 @@ export default {
       resetForm,
       searchValue,
       searchChange,
-      isAdd,
       handleAdd,
+      isAdd,
     };
   },
   data() {
     return {
       tableHead: [
-        { name: "菜单名称", key: "menu" },
-        { name: "菜单路径", key: "path" },
-        { name: "所属父级", key: "parent" },
-        { name: "菜单图标", key: "icon" },
+        { name: "标题", key: "text", sortable: false },
+        { name: "路径", key: "link", sortable: false },
+        { name: "所属父类", key: "parent", sortable: false },
+        { name: "标签", key: "label", sortable: false },
+        { name: "描述", key: "description", sortable: false },
+        { name: "分类", key: "cate", sortable: false },
+        { name: "阅读量", key: "read_count", sortable: true },
+        { name: "点赞量", key: "good", sortable: true },
+        { name: "发布日期", key: "publish_time", sortable: true },
+        { name: "更新日期", key: "update_time", sortable: true },
       ],
       editFields: [
-        { name: "菜单名称", key: "menu" },
-        { name: "菜单路径", key: "path" },
-        { name: "所属父级", key: "parent" },
-        { name: "菜单图标", key: "icon" },
+        { name: "标题", key: "text", type: '' },
+        { name: "路径", key: "link", type: '' },
+        { name: "所属父类", key: "parent", type: '' },
+        { name: "标签", key: "label", type: '' },
+        { name: "描述", key: "description", type: 'textarea' },
+        { name: "分类", key: "cate", type: '' },
+        { name: "阅读量", key: "read_count", type: '' },
+        { name: "点赞量", key: "good", type: '' },
+        { name: "发布日期", key: "publish_time", type: 'date' },
+        { name: "更新日期", key: "update_time", type: 'date' },
       ],
     };
   },

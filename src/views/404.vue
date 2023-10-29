@@ -26,8 +26,8 @@ export default({
       router.go(-1);
     }
     const goHome = () => {
-			router.push({ name: "Home" });
-		};
+      router.replace('/home')
+    }
     return { backPage, goHome }
   }
 })
